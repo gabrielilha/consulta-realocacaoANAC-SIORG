@@ -152,7 +152,7 @@ with request.urlopen('http://estruturaorganizacional.dados.gov.br/doc/estrutura-
         (:1,:2,:3,:4)
         ''', lista_SIORG_CONTATO)
 
-        # Populando a tabela UORG_SIORG
+        # Populando a tabela UORG_SIORG_ENDERECO
         o_cursor.executemany('''insert into UORG_SIORG_ENDERECO(
             ID_UORG,
             DS_LOGRADOURO,
