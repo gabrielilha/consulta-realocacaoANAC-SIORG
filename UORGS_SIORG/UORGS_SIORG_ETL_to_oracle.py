@@ -12,8 +12,9 @@ oracle_conn = cx_Oracle.connect(user="DEP_SGP", password="DEP_SGP01",
 #Criando cursor oracle
 o_cursor = oracle_conn.cursor()
 
-#Coletando os dados do SIORG
-with request.urlopen('http://estruturaorganizacional.dados.gov.br/doc/estrutura-organizacional/completa.json?codigoPoder={}&codigoEsfera={}&codigoUnidade={}&retornarOrgaoEntidadeVinculados={}'.format(1,1,86144,'SIM')) as response:
+#Coletando os dados do SIORG da ANAC
+nr_orgao = 86144
+with request.urlopen('http://estruturaorganizacional.dados.gov.br/doc/estrutura-organizacional/completa.json?codigoPoder={}&codigoEsfera={}&codigoUnidade={}&retornarOrgaoEntidadeVinculados={}'.format(1,1,nr_orgao,'SIM')) as response:
     if response.getcode() == 200:
         source = response.read()
         data = json.loads(source)
@@ -31,7 +32,7 @@ with request.urlopen('http://estruturaorganizacional.dados.gov.br/doc/estrutura-
             areaAtuacao = (data['unidades'][i]['areaAtuacao'])
             endereco = (data['unidades'][i]['endereco'])
             
-            #Criando dicionário com os dados
+            #Criando uma lista de dicionários com os dados da ANAC
             dicioario = {
                 'codigoUnidade': codigoUnidade,
                 'codigoUnidadePai': codigoUnidadePai,
@@ -44,7 +45,7 @@ with request.urlopen('http://estruturaorganizacional.dados.gov.br/doc/estrutura-
             }
             lista_dicionarios.append(dicioario)
 
-            #Criando a lista de dados Unidades SIORG
+            #Criando a lista de dados Unidades SIORG da ANAC
             linha_lista_SIORG = [
                 codigoUnidade,
                 codigoUnidadePai,
@@ -55,7 +56,7 @@ with request.urlopen('http://estruturaorganizacional.dados.gov.br/doc/estrutura-
                 ]
             lista_SIORG.append(linha_lista_SIORG)
 
-            #Criando a lista de contato Unidades SIORG
+            #Criando a lista de contato Unidades SIORG da ANAC
             for c in range(0,len(data['unidades'][i]['contato'])):
     
                 contatoTelefones = ''
@@ -111,7 +112,7 @@ with request.urlopen('http://estruturaorganizacional.dados.gov.br/doc/estrutura-
                 linha_lista_SIORG_CONTATO = [codigoUnidade ,contatoTelefone, contatoEmail, contatoSite]
                 lista_SIORG_CONTATO.append(linha_lista_SIORG_CONTATO)
 
-            #Criando a lista de endereco Unidades SIORG
+            #Criando a lista de endereco Unidades SIORG da ANAC
             for e in range(0,len(data['unidades'][i]['endereco'])):
                 linha_lista_SIORG_ENDERECO = [
                     codigoUnidade,
@@ -128,20 +129,21 @@ with request.urlopen('http://estruturaorganizacional.dados.gov.br/doc/estrutura-
                 ]
                 lista_SIORG_ENDERECO.append(linha_lista_SIORG_ENDERECO)
 
-        # Populando a tabela UORG_SIORG
+        # Populando a tabela UORG_SIORG com os dados da ANAC
         o_cursor.executemany('''insert into UORG_SIORG(
             NR_UORG,
             NR_UORG_PAI,
+            NR_ORGAO,
             DS_TIPO,
             NM_UORG,
             SG_UORG,
             DS_AREA_ATUACAO
         )
         values
-        (:1,:2,:3,:4,:5,:6)
+        (:1,:2,'86144',:3,:4,:5,:6)
         ''', lista_SIORG)
 
-        # Populando a tabela UORG_SIORG_CONTATO
+        # Populando a tabela UORG_SIORG_CONTATO com os dados da ANAC
         o_cursor.executemany('''insert into UORG_SIORG_CONTATO(
             ID_UORG,
             NR_TELEFONE,
@@ -152,7 +154,7 @@ with request.urlopen('http://estruturaorganizacional.dados.gov.br/doc/estrutura-
         (:1,:2,:3,:4)
         ''', lista_SIORG_CONTATO)
 
-        # Populando a tabela UORG_SIORG_ENDERECO
+        # Populando a tabela UORG_SIORG_ENDERECO com os dados da ANAC
         o_cursor.executemany('''insert into UORG_SIORG_ENDERECO(
             ID_UORG,
             DS_LOGRADOURO,
@@ -170,9 +172,8 @@ with request.urlopen('http://estruturaorganizacional.dados.gov.br/doc/estrutura-
         (:1,:2,:3,:4,:5,:6,:7,:8,:9,:10,:11)
         ''', lista_SIORG_ENDERECO)
 
-        # Commitando alterações
+        # Commitando/confirmando alterações
         oracle_conn.commit()
         print('Dados comitados')
     else:
         print('An error occurred while attempting to retrieve data from the API.')
-    
